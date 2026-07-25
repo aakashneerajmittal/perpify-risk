@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perpify — S&P 500 Gap Risk Monitor</title>
+<meta name="description" content="Live gap-risk state for S&P 500 reopens. 31 years of SPY data: 28.5% of sessions open with a gap over 0.5%. Perpify prices the hours markets are closed.">
+<meta property="og:title" content="Perpify — S&P 500 Gap Risk Monitor">
+<meta property="og:description" content="Markets close. Risk doesn't. Live dark-period gap coefficient, calibrated on 7,936 SPY sessions (1995–2026).">
+<style>
+  :root{
+    --page:#0d0d0d; --surface:#1a1a19; --surface2:#212120;
+    --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,0.10);
+    --wknight:#3987e5; --wkend:#008300; --wkend-bright:#0ca30c;
+    --seq:#3987e5; --crit:#d03b3b;
+    --mono-nums:'tabular-nums';
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--wknight);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+
+  header{border-bottom:1px solid var(--ring);padding:18px 0}
+  header .wrap{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{font-size:15px;font-weight:700;letter-spacing:.14em}
+  .brand span{color:var(--muted);font-weight:400;letter-spacing:.02em;margin-left:10px;font-size:13px}
+  header a{font-size:13px;color:var(--ink2)}
+
+  .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin:28px 0 16px}
+  @media(max-width:760px){.hero{grid-template-columns:1fr}}
+  .panel{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:22px}
+  .panel h2{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+  .state-line{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink2)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+  .dot.closed{background:var(--crit)}
+  .dot.open{background:var(--wkend-bright)}
+  .countdown{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:10px 0 2px}
+  .cd-sub{font-size:13px;color:var(--muted)}
+  .darkmeta{display:flex;gap:26px;margin-top:18px;flex-wrap:wrap}
+  .darkmeta div b{display:block;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .darkmeta div span{font-size:12px;color:var(--muted)}
+
+  .coef{font-size:56px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+  .coef small{font-size:24px;color:var(--ink2);font-weight:600}
+  .coef-class{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid var(--ring);color:var(--ink2);margin-top:8px}
+  .coef-stats{margin-top:16px;border-top:1px solid var(--grid);padding-top:12px;font-size:13px;color:var(--ink2);display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+  .coef-stats b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .v0note{font-size:11.5px;color:var(--muted);margin-top:12px}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:0 0 16px}
+  @media(max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:18px 20px}
+  .tile b{display:block;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .tile span{font-size:12.5px;color:var(--muted);display:block;margin-top:3px;line-height:1.4}
+
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  @media(max-width:860px){.charts{grid-template-columns:1fr}}
+  .chart-panel h3{font-size:14px;font-weight:600;margin-bottom:2px}
+  .chart-panel p.sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+  svg{display:block;width:100%;height:auto}
+  .full{grid-column:1/-1}
+
+  .legend{display:flex;gap:18px;margin:6px 0 4px;font-size:12px;color:var(--ink2)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--axis)}
+  td{padding:8px 10px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;color:var(--ink2)}
+  td.g{font-weight:600;color:var(--ink)}
+  td:first-child{color:var(--muted)}
+  .kind{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+  .kind i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+  .method{margin:8px 0 40px}
+  .method h2{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+  .method p{font-size:14px;color:var(--ink2);max-width:74ch;margin-bottom:10px}
+  .method code{background:var(--surface2);border:1px solid var(--ring);border-radius:5px;padding:2px 7px;font-size:12.5px;color:var(--ink2)}
+  .correction{background:var(--surface);border:1px solid var(--ring);border-left:3px solid var(--wknight);border-radius:8px;padding:16px 18px;max-width:74ch;margin:14px 0}
+  .correction b{font-size:13.5px}
+  .correction p{font-size:13.5px;margin:4px 0 0}
+
+  footer{border-top:1px solid var(--ring);padding:20px 0 46px;font-size:12.5px;color:var(--muted)}
+  footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+  .tip{position:fixed;pointer-events:none;background:var(--surface2);border:1px solid var(--ring);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--ink2);box-shadow:0 6px 20px rgba(0,0,0,.45);opacity:0;transition:opacity .08s;z-index:10;max-width:240px}
+  .tip b{color:var(--ink);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">PERPIFY<span>S&amp;P 500 Gap Risk Monitor</span></div>
+    <a href="https://www.perpify.trade">perpify.trade →</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="panel">
+      <h2>Market state — live</h2>
+      <div class="state-line"><span class="dot" id="stateDot"></span><span id="stateText">…</span></div>
+      <div class="countdown" id="countdown">—:—:—</div>
+      <div class="cd-sub" id="cdSub"></div>
+      <div class="darkmeta">
+        <div><b id="darkLen">—</b><span>dark period length</span></div>
+        <div><b id="darkElapsed">—</b><span>elapsed</span></div>
+        <div><b id="etClock">—</b><span>New York time</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Gap coefficient <span style="text-transform:none;letter-spacing:0">(v0)</span></h2>
+      <div class="coef"><span id="coefVal">—</span><small>σ</small></div>
+      <div class="coef-class" id="coefClass">—</div>
+      <div class="coef-stats" id="coefStats"></div>
+      <div class="v0note">Calibration v0: dark-period duration &amp; calendar class, from 31 years of SPY reopens. Realized-vol and scheduled-event conditioning ship with testnet.</div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><b>28.5%</b><span>of sessions open with a gap &gt;0.5% — more than 1 in 4, over 31 years</span></div>
+    <div class="tile"><b>1 in 11</b><span>sessions gap more than 1% (9.1%); 1.9% gap more than 2%</span></div>
+    <div class="tile"><b>5 of 10</b><span>largest gaps were weekend/holiday reopens — from just 20.7% of sessions</span></div>
+    <div class="tile"><b>−10.45%</b><span>worst reopen in the dataset — Monday, March 16, 2020</span></div>
+  </div>
+
+  <div class="charts">
+    <div class="panel chart-panel">
+      <h3>Probability a reopen gaps more than x</h3>
+      <p class="sub">P(|gap| &gt; x), by dark-period class — weekends carry the fatter tail</p>
+      <div class="legend"><span><i style="background:var(--wknight)"></i>Weeknight (~17.5h dark)</span><span><i style="background:var(--wkend)"></i>Weekend / holiday (65.5h+)</span></div>
+      <svg id="excChart" viewBox="0 0 480 300" role="img" aria-label="Exceedance curve of absolute reopen gaps for weeknight versus weekend dark periods"></svg>
+    </div>
+    <div class="panel chart-panel">
+      <h3>Distribution of reopen gaps</h3>
+      <p class="sub">Share of sessions per 0.2% bin, normalized within each class</p>
+      <div class="legend"><span><i style="background:var(--wknight)"></i>Weeknight</span><span><i style="background:var(--wkend)"></i>Weekend / holiday</span></div>
+      <svg id="distChart" viewBox="0 0 480 300" role="img" aria-label="Histogram of signed reopen gaps for weeknight versus weekend dark periods"></svg>
+    </div>
+    <div class="panel chart-panel full">
+      <h3>Worst reopen gap by year</h3>
+      <p class="sub">Largest |gap| each year, 1995–2026 — tail risk clusters in regimes, it doesn't average out</p>
+      <svg id="yearChart" viewBox="0 0 1000 240" role="img" aria-label="Bar chart of the worst absolute reopen gap in each year from 1995 to 2026"></svg>
+    </div>
+    <div class="panel chart-panel full">
+      <h3>The ten largest reopen gaps, 1995–2026</h3>
+      <p class="sub">Half arrived after a weekend or holiday close</p>
+      <table id="topTable">
+        <thead><tr><th>#</th><th>Reopen date</th><th>Gap</th><th>Dark period</th><th>Context</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="method">
+    <h2>Methodology</h2>
+    <p><b>Gap</b> = today's official open ÷ previous session's official close − 1: the move that happens entirely while the market is closed and no position can be adjusted. A reopen is classed <b>weekend/holiday</b> when the previous session is ≥3 calendar days back. Dataset: SPY daily OHLC, unadjusted, 1995-01-04 → 2026-07-17 — 7,936 reopens (6,291 weeknight, 1,645 weekend/holiday). SPY's four ex-dividend days per year each add roughly 0.3–0.4% of mechanical down-bias, below the 0.5% stat threshold.</p>
+    <p>The <b>gap coefficient</b> shown above is the v0 margin scalar Perpify applies during dark periods: weeknight baseline 1.00σ (σ = 0.65%), weekend/holiday 1.25σ (σ = 0.81%, a 1.55× variance premium) — the σ-basis anchor of a calibration range of 1.2–1.5 that will be conditioned up by realized-vol regime and scheduled events. Weekend fat tails come from event clustering, not duration alone: 65.5 dark hours hold 3.7× the weeknight's dark time but only 1.55× its gap variance — until the years where they hold everything.</p>
+    <div class="correction">
+      <b>A correction, published on purpose.</b>
+      <p>Earlier Perpify materials claimed "38% of trading days open with a gap larger than 0.5%." When we calibrated the model against the full 31-year series, the measured number was <b>28.5%</b>. We corrected every document. A venue whose product is published, replayable methodology cannot carry an unverifiable stat — including its own.</p>
+    </div>
+    <p>Reproduce every number on this page: <code>python3 risk/gap/gap_stats.py</code> against <code>risk/data/spy_daily.csv</code>. The dataset refreshes with each Weekly Gap Report.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Perpify — onchain S&amp;P 500 perps that survive the weekend</span>
+    <span>Data through 2026-07-17 · <a href="https://www.perpify.trade">perpify.trade</a> · <a href="https://x.com/aakashneeraj">@aakashneeraj</a></span>
+  </div>
+</footer>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ---------- data (computed from risk/data/spy_daily.csv, commit-pinned) ---------- */
+const D = {
+  xs:      [0.1,0.2,0.3,0.5,0.75,1.0,1.5,2.0,3.0],
+  excWk:   [79.99,62.39,47.62,27.94,14.93,8.66,3.42,1.70,0.37],
+  excWe:   [80.91,64.13,49.48,30.40,17.69,10.82,4.38,2.55,1.03],
+  binStart:-3.0, binStep:0.2,
+  binsWk:  [0.24,0.17,0.14,0.16,0.24,0.22,0.40,0.64,0.86,1.38,2.02,3.43,6.26,11.10,17.79,19.82,15.02,8.76,4.42,2.72,1.53,0.92,0.43,0.30,0.29,0.21,0.10,0.11,0.11,0.22],
+  binsWe:  [0.79,0.06,0.24,0.12,0.12,0.24,0.43,1.09,0.79,2.01,2.13,3.59,4.86,10.58,17.99,17.87,15.08,9.42,4.80,2.86,1.64,0.97,0.55,0.43,0.12,0.12,0.24,0.18,0.18,0.49],
+  yearly: {1995:1.03,1996:2.50,1997:3.23,1998:3.20,1999:3.09,2000:2.55,2001:8.22,2002:2.79,2003:2.40,2004:1.30,2005:1.00,2006:0.90,2007:2.39,2008:8.32,2009:3.14,2010:4.09,2011:2.94,2012:2.03,2013:1.90,2014:1.81,2015:5.23,2016:3.41,2017:1.10,2018:1.69,2019:1.97,2020:10.45,2021:1.51,2022:3.72,2023:1.49,2024:3.99,2025:3.47,2026:2.60},
+  top10: [
+    {d:'2020-03-16',g:-10.45,k:'we',ctx:'COVID crash — Fed emergency cut Sunday night'},
+    {d:'2008-10-24',g:-8.32, k:'wk',ctx:'Global financial crisis'},
+    {d:'2001-09-17',g:-8.22, k:'we',ctx:'First session after 9/11 (4-day halt)'},
+    {d:'2020-03-09',g:-7.45, k:'we',ctx:'COVID + oil-price war weekend'},
+    {d:'2020-03-12',g:-6.69, k:'wk',ctx:'COVID crash'},
+    {d:'2020-03-18',g:-6.55, k:'wk',ctx:'COVID crash'},
+    {d:'2008-10-13',g:+6.07, k:'we',ctx:'Weekend bank-rescue announcements'},
+    {d:'2020-03-13',g:+6.04, k:'wk',ctx:'COVID rebound'},
+    {d:'2008-09-19',g:+5.52, k:'wk',ctx:'TARP announcement'},
+    {d:'2015-08-24',g:-5.23, k:'we',ctx:'China devaluation weekend'}
+  ],
+  stats:{ wk:{sigma:0.65,p05:27.9,p99:2.39,n:6291}, we:{sigma:0.81,p05:30.4,p99:2.98,n:1645} }
+};
+const C = { wk:'#3987e5', we:'#008300', weBright:'#0ca30c', ink:'#ffffff', ink2:'#c3c2b7', muted:'#898781', grid:'#2c2c2a', axis:'#383835' };
+
+/* ---------- market clock (America/New_York) ---------- */
+const HOLIDAYS = new Set([
+  '2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
+  '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'
+]);
+const etFmt = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',weekday:'short'});
+function etParts(date){
+  const p = {}; for (const {type,value} of etFmt.formatToParts(date)) p[type]=value;
+  return { y:+p.year, m:+p.month, d:+p.day, h:(+p.hour)%24, min:+p.minute, s:+p.second, dow:p.weekday, key:`${p.year}-${p.month}-${p.day}` };
+}
+function isTradingDay(key,dow){ return dow!=='Sat' && dow!=='Sun' && !HOLIDAYS.has(key); }
+// epoch (ms) of an ET wall time, via offset correction
+function etEpoch(y,m,d,h,min){
+  let guess = Date.UTC(y,m-1,d,h,min,0);
+  for (let i=0;i<3;i++){
+    const p = etParts(new Date(guess));
+    const diff = Date.UTC(p.y,p.m-1,p.d,p.h,p.min,p.s) - Date.UTC(y,m-1,d,h,min,0);
+    if (diff===0) break;
+    guess -= diff;
+  }
+  return guess;
+}
+function scanDay(from, dir){ // next (dir=1) / prev (dir=-1) trading day key, starting from a UTC ms at ET noon
+  let t = from;
+  for (let i=0;i<15;i++){
+    const p = etParts(new Date(t));
+    if (isTradingDay(p.key,p.dow)) return p;
+    t += dir*86400000;
+  }
+  return etParts(new Date(from));
+}
+function marketState(now){
+  const p = etParts(now);
+  const todayTrading = isTradingDay(p.key,p.dow);
+  const openT  = etEpoch(p.y,p.m,p.d,9,30);
+  const closeT = etEpoch(p.y,p.m,p.d,16,0);
+  const t = now.getTime();
+  if (todayTrading && t>=openT && t<closeT){
+    return { open:true, until:closeT };
+  }
+  // find prev close and next open
+  let prevP, nextP;
+  if (todayTrading && t<openT){ nextP = p; } else { nextP = scanDay(etEpoch(p.y,p.m,p.d,12,0)+86400000, 1); }
+  if (todayTrading && t>=closeT){ prevP = p; } else { prevP = scanDay(etEpoch(p.y,p.m,p.d,12,0)-86400000, -1); }
+  const prevClose = etEpoch(prevP.y,prevP.m,prevP.d,16,0);
+  const nextOpen  = etEpoch(nextP.y,nextP.m,nextP.d,9,30);
+  const darkDays = Math.round((Date.UTC(nextP.y,nextP.m-1,nextP.d)-Date.UTC(prevP.y,prevP.m-1,prevP.d))/86400000);
+  return { open:false, prevClose, nextOpen, weekend: darkDays>=3, nextP };
+}
+function fmtDur(ms){
+  if (ms<0) ms=0;
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  return `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+function tick(){
+  const now = new Date();
+  const st = marketState(now);
+  const dot=document.getElementById('stateDot'), stx=document.getElementById('stateText'),
+        cd=document.getElementById('countdown'), sub=document.getElementById('cdSub'),
+        dl=document.getElementById('darkLen'), de=document.getElementById('darkElapsed'),
+        cv=document.getElementById('coefVal'), cc=document.getElementById('coefClass'), cs=document.getElementById('coefStats');
+  const ep = etParts(now);
+  document.getElementById('etClock').textContent = `${String(ep.h).padStart(2,'0')}:${String(ep.min).padStart(2,'0')}:${String(ep.s).padStart(2,'0')} ET`;
+  if (st.open){
+    dot.className='dot open'; stx.textContent='U.S. equities are OPEN — baseline margin applies';
+    cd.textContent = fmtDur(st.until-now.getTime()); sub.textContent='until today’s close (4:00 PM ET)';
+    dl.textContent='—'; de.textContent='—';
+    cv.textContent='1.00'; cc.textContent='Market open · baseline';
+    cs.innerHTML = `<span>weeknight reopen σ <b>0.65%</b></span>`+
+                   `<span>weekend reopen σ <b>0.81%</b></span>`+
+                   `<span>P(|gap|&gt;0.5%) wknight <b>27.9%</b></span>`+
+                   `<span>P(|gap|&gt;0.5%) wkend <b>30.4%</b></span>`;
+  } else {
+    const cls = st.weekend ? 'we':'wk', S = D.stats[cls];
+    const total = st.nextOpen-st.prevClose, elapsed = now.getTime()-st.prevClose;
+    dot.className='dot closed';
+    stx.textContent = `U.S. equities are CLOSED — ${st.weekend?'weekend/holiday':'weeknight'} dark period`;
+    cd.textContent = fmtDur(st.nextOpen-now.getTime());
+    sub.textContent = `until the reopen — ${st.nextP.dow} 9:30 AM ET`;
+    dl.textContent = (total/3600000).toFixed(1)+'h';
+    de.textContent = (elapsed/3600000).toFixed(1)+'h';
+    cv.textContent = st.weekend ? '1.25':'1.00';
+    cc.textContent = st.weekend ? 'Weekend / holiday reopen ahead' : 'Weeknight reopen ahead';
+    cs.innerHTML = `<span>expected reopen σ <b>${S.sigma.toFixed(2)}%</b></span>`+
+                   `<span>P(|gap|&gt;0.5%) <b>${S.p05.toFixed(1)}%</b></span>`+
+                   `<span>99th-pct |gap| <b>${S.p99.toFixed(2)}%</b></span>`+
+                   `<span>reopens observed <b>${S.n.toLocaleString()}</b></span>`;
+  }
+}
+setInterval(tick,1000); tick();
+
+/* ---------- tiny svg helpers ---------- */
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function txt(parent,x,y,str,attrs){ const t=el('text',Object.assign({x,y,fill:C.muted,'font-size':'10.5','font-family':'system-ui,sans-serif'},attrs),parent); t.textContent=str; return t; }
+const tip=document.getElementById('tip');
+function showTip(html,ev){ tip.innerHTML=html; tip.style.opacity=1; const pad=14; let x=ev.clientX+pad,y=ev.clientY+pad; if(x+250>innerWidth)x=ev.clientX-250; if(y+70>innerHeight)y=ev.clientY-80; tip.style.left=x+'px'; tip.style.top=y+'px'; }
+function hideTip(){ tip.style.opacity=0; }
+
+/* ---------- chart 1: exceedance ---------- */
+(function(){
+  const svg=document.getElementById('excChart');
+  const W=480,H=300,L=40,R=14,T=14,B=34;
+  const xmax=3.0, ymax=85;
+  const X=v=>L+(v/xmax)*(W-L-R), Y=v=>T+(1-v/ymax)*(H-T-B);
+  for(let g=0;g<=80;g+=20){ el('line',{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:C.grid,'stroke-width':1},svg); txt(svg,L-6,Y(g)+3,g+'%',{'text-anchor':'end'}); }
+  el('line',{x1:L,x2:W-R,y1:Y(0),y2:Y(0),stroke:C.axis,'stroke-width':1},svg);
+  [0.5,1,2,3].forEach(v=>txt(svg,X(v),H-B+16,v+'%',{'text-anchor':'middle'}));
+  txt(svg,(L+W-R)/2,H-4,'gap threshold x',{'text-anchor':'middle'});
+  // reference at 0.5%
+  el('line',{x1:X(0.5),x2:X(0.5),y1:T,y2:Y(0),stroke:C.axis,'stroke-width':1,'stroke-dasharray':'3 4'},svg);
+  function line(xs,ys,color){
+    const pts=xs.map((x,i)=>`${X(x)},${Y(ys[i])}`).join(' ');
+    el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+    xs.forEach((x,i)=>{ if([0.5,1,2].includes(x)) el('circle',{cx:X(x),cy:Y(ys[i]),r:3.5,fill:color,stroke:'#1a1a19','stroke-width':2},svg); });
+  }
+  line(D.xs,D.excWe,C.we);
+  line(D.xs,D.excWk,C.wk);
+  // annotate the headline point
+  txt(svg,X(0.5)+6,Y(30.4)-8,'30.4%',{fill:C.we,'font-weight':'600','font-size':'11'});
+  txt(svg,X(0.5)+6,Y(27.9)+16,'27.9%',{fill:C.wk,'font-weight':'600','font-size':'11'});
+  // hover
+  const hover=el('rect',{x:L,y:T,width:W-L-R,height:H-T-B,fill:'transparent'},svg);
+  hover.addEventListener('mousemove',ev=>{
+    const r=svg.getBoundingClientRect(); const mx=(ev.clientX-r.left)*(W/r.width);
+    let best=0,bd=1e9; D.xs.forEach((x,i)=>{const d=Math.abs(X(x)-mx); if(d<bd){bd=d;best=i;}});
+    showTip(`|gap| &gt; <b>${D.xs[best]}%</b><br>weeknight: <b>${D.excWk[best]}%</b> of reopens<br>weekend: <b>${D.excWe[best]}%</b> of reopens`,ev);
+  });
+  hover.addEventListener('mouseleave',hideTip);
+})();
+
+/* ---------- chart 2: distribution ---------- */
+(function(){
+  const svg=document.getElementById('distChart');
+  const W=480,H=300,L=40,R=14,T=14,B=34;
+  const ymax=22;
+  const n=D.binsWk.length;
+  const X=i=>L+(i/n)*(W-L-R), Y=v=>T+(1-v/ymax)*(H-T-B);
+  const binMid=i=>D.binStart+(i+0.5)*D.binStep;
+  for(let g=0;g<=20;g+=5){ el('line',{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:C.grid,'stroke-width':1},svg); txt(svg,L-6,Y(g)+3,g+'%',{'text-anchor':'end'}); }
+  el('line',{x1:L,x2:W-R,y1:Y(0),y2:Y(0),stroke:C.axis,'stroke-width':1},svg);
+  [-3,-2,-1,0,1,2,3].forEach(v=>{ const i=(v-D.binStart)/D.binStep; txt(svg,X(i),H-B+16,(v>0?'+':'')+v+'%',{'text-anchor':'middle'}); });
+  txt(svg,(L+W-R)/2,H-4,'reopen gap (signed)',{'text-anchor':'middle'});
+  const zi=(0-D.binStart)/D.binStep;
+  el('line',{x1:X(zi),x2:X(zi),y1:T,y2:Y(0),stroke:C.axis,'stroke-width':1,'stroke-dasharray':'3 4'},svg);
+  function poly(bins,color){
+    const pts=bins.map((v,i)=>`${X(i+0.5)},${Y(v)}`).join(' ');
+    el('polygon',{points:`${X(0.5)},${Y(0)} ${pts} ${X(n-0.5)},${Y(0)}`,fill:color,'fill-opacity':0.13},svg);
+    el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round'},svg);
+  }
+  poly(D.binsWk,C.wk); poly(D.binsWe,C.we);
+  txt(svg,X(zi+2.2),Y(19.8),'weeknight',{fill:C.wk,'font-weight':'600','font-size':'11'});
+  txt(svg,X(zi-2.2),Y(18.2),'weekend',{fill:C.we,'font-weight':'600','font-size':'11','text-anchor':'end'});
+  txt(svg,X(n-1),Y(2.2),'fatter tails →',{fill:C.muted,'font-size':'10','text-anchor':'end'});
+  const hover=el('rect',{x:L,y:T,width:W-L-R,height:H-T-B,fill:'transparent'},svg);
+  hover.addEventListener('mousemove',ev=>{
+    const r=svg.getBoundingClientRect(); const mx=(ev.clientX-r.left)*(W/r.width);
+    let i=Math.max(0,Math.min(n-1,Math.floor(((mx-L)/(W-L-R))*n)));
+    const lo=(D.binStart+i*D.binStep).toFixed(1), hi=(D.binStart+(i+1)*D.binStep).toFixed(1);
+    showTip(`gap ${lo}% … ${hi}%<br>weeknight: <b>${D.binsWk[i]}%</b> of reopens<br>weekend: <b>${D.binsWe[i]}%</b> of reopens`,ev);
+  });
+  hover.addEventListener('mouseleave',hideTip);
+})();
+
+/* ---------- chart 3: yearly worst ---------- */
+(function(){
+  const svg=document.getElementById('yearChart');
+  const W=1000,H=240,L=40,R=10,T=16,B=30;
+  const years=Object.keys(D.yearly).map(Number);
+  const ymax=11;
+  const bw=(W-L-R)/years.length;
+  const X=i=>L+i*bw, Y=v=>T+(1-v/ymax)*(H-T-B);
+  for(let g=0;g<=10;g+=2){ el('line',{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:C.grid,'stroke-width':1},svg); txt(svg,L-6,Y(g)+3,g+'%',{'text-anchor':'end'}); }
+  el('line',{x1:L,x2:W-R,y1:Y(0),y2:Y(0),stroke:C.axis,'stroke-width':1},svg);
+  years.forEach((yr,i)=>{
+    const v=D.yearly[yr];
+    const x=X(i)+2, w=bw-4, y=Y(v), h=Y(0)-y;
+    const r=Math.min(3,w/2);
+    el('path',{d:`M${x},${Y(0)} L${x},${y+r} Q${x},${y} ${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${Y(0)} Z`,fill:C.wk,'fill-opacity':v>=5?1:0.55},svg);
+    if(yr%5===0||yr===2026) txt(svg,x+w/2,H-B+16,String(yr),{'text-anchor':'middle'});
+    if(v>=5) txt(svg,x+w/2,y-6,(yr===2020?'−10.45%':yr===2008?'−8.32%':yr===2001?'−8.22%':'−5.23%'),{'text-anchor':'middle',fill:C.ink2,'font-weight':'600','font-size':'10.5'});
+    const hit=el('rect',{x:X(i),y:T,width:bw,height:H-T-B,fill:'transparent'},svg);
+    hit.addEventListener('mousemove',ev=>showTip(`<b>${yr}</b> — worst reopen gap <b>${v.toFixed(2)}%</b>`,ev));
+    hit.addEventListener('mouseleave',hideTip);
+  });
+})();
+
+/* ---------- table ---------- */
+(function(){
+  const tb=document.querySelector('#topTable tbody');
+  D.top10.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    const kcol = r.k==='we'?C.we:C.wk, klabel = r.k==='we'?'weekend/holiday':'weeknight';
+    tr.innerHTML=`<td>${i+1}</td><td>${r.d}</td><td class="g">${r.g>0?'+':''}${r.g.toFixed(2)}%</td>`+
+      `<td><span class="kind"><i style="background:${kcol}"></i>${klabel}</span></td><td>${r.ctx}</td>`;
+    tb.appendChild(tr);
+  });
+})();
+</script>
+</body>
+</html>
