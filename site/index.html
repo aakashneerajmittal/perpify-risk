@@ -3,64 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Perpify — S&P 500 Gap Risk Monitor</title>
-<meta name="description" content="Live gap-risk state for S&P 500 reopens. 31 years of SPY data: 28.5% of sessions open with a gap over 0.5%. Perpify prices the hours markets are closed.">
-<meta property="og:title" content="Perpify — S&P 500 Gap Risk Monitor">
-<meta property="og:description" content="Markets close. Risk doesn't. Live dark-period gap coefficient, calibrated on 7,936 SPY sessions (1995–2026).">
+<title>Gap Monitor — everyone stops watching at 4. This doesn't. | Perpify</title>
+<meta name="description" content="The live cost of the closed market: Perpify's S&P 500 gap coefficient, calibrated on 7,936 reopens (1995–2026), updating through every night and weekend.">
+<meta property="og:title" content="Perpify Gap Monitor — everyone stops watching at 4. This doesn't.">
+<meta property="og:description" content="Markets close. Risk doesn't. The live dark-period gap coefficient, calibrated on 31 years of S&P reopens.">
+<meta name="theme-color" content="#070708">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234F8EFF'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='800' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root{
-    --page:#0d0d0d; --surface:#1a1a19; --surface2:#212120;
-    --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
-    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,0.10);
-    --wknight:#3987e5; --wkend:#008300; --wkend-bright:#0ca30c;
-    --seq:#3987e5; --crit:#d03b3b;
-    --mono-nums:'tabular-nums';
+    --page:#070708; --surface:#0e0e0e; --surface2:#121214;
+    --ink:#F0EDE8; --ink2:#c6c4ba; --muted:#8a8a82; --dim:#55554e;
+    --grid:#1f1f1e; --axis:#2c2c2a; --ring:rgba(255,255,255,0.08); --ring2:rgba(255,255,255,0.14);
+    --blue:#4F8EFF; --blue2:#2E6BE0;
+    --wknight:#4F8EFF; --wkend:#26a69a; --wkend-bright:#2fd39f;
+    --seq:#4F8EFF; --crit:#ef5350;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:'DM Mono',ui-monospace,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{color-scheme:dark}
-  body{background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{background:var(--page);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
   a{color:var(--wknight);text-decoration:none}
   a:hover{text-decoration:underline}
-  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
 
-  header{border-bottom:1px solid var(--ring);padding:18px 0}
-  header .wrap{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .brand{font-size:15px;font-weight:700;letter-spacing:.14em}
-  .brand span{color:var(--muted);font-weight:400;letter-spacing:.02em;margin-left:10px;font-size:13px}
-  header a{font-size:13px;color:var(--ink2)}
+  /* nav — same system as perpify.trade */
+  nav{position:sticky;top:0;z-index:50;background:rgba(7,7,8,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--ring)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:19px;letter-spacing:-0.02em;color:var(--ink)}
+  .brand:hover{text-decoration:none}
+  .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#4F8EFF 0%,#2E6BE0 100%);display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:0 2px 12px rgba(79,142,255,.35)}
+  .navlinks{display:flex;gap:6px;align-items:center}
+  .navlinks a{color:var(--ink)}
+  .navlinks a:hover{text-decoration:none}
+  .prod{display:inline-flex;align-items:center;gap:8px;font-weight:700;border:1px solid var(--ring2);border-radius:999px;padding:9px 16px;font-size:13.5px}
+  .prod:hover{border-color:var(--blue)}
+  .prod.on{border-color:var(--blue)}
+  .prod svg{width:15px;height:15px;flex:none}
+  .ic-score{color:#26a69a}
+  .ic-agents{color:#4F8EFF}
+  .ic-gap{color:#d9a05b}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;font-size:14px;font-weight:600;background:linear-gradient(135deg,#4F8EFF,#2E6BE0);color:#fff;box-shadow:0 2px 14px rgba(79,142,255,.30)}
+  .btn:hover{text-decoration:none;box-shadow:0 4px 22px rgba(79,142,255,.45)}
+  @media(max-width:840px){.navlinks{display:none}}
 
-  .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin:28px 0 16px}
+  /* intro */
+  .intro{padding:64px 0 40px;position:relative;overflow:hidden}
+  .intro::before{content:"";position:absolute;inset:-40% -20% auto;height:150%;background:radial-gradient(560px 300px at 70% 10%,rgba(79,142,255,.12),transparent 65%);pointer-events:none}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--blue);border:1px solid rgba(79,142,255,.35);border-radius:999px;padding:7px 14px;background:rgba(79,142,255,.07)}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--wkend-bright);box-shadow:0 0 8px var(--wkend-bright);animation:pu 2.2s infinite}
+  @keyframes pu{0%,100%{opacity:1}50%{opacity:.45}}
+  .intro h1{font-size:clamp(34px,5vw,54px);line-height:1.05;letter-spacing:-0.028em;font-weight:800;margin-top:22px;max-width:820px}
+  .intro h1 .accent{color:var(--blue)}
+  .intro p{margin-top:16px;color:var(--muted);max-width:600px;font-size:16.5px}
+
+  .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin:8px 0 16px}
   @media(max-width:760px){.hero{grid-template-columns:1fr}}
-  .panel{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:22px}
-  .panel h2{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .panel{background:var(--surface);border:1px solid var(--ring);border-radius:18px;padding:24px}
+  .panel h2{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;font-family:var(--mono)}
 
   .state-line{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink2)}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
   .dot.closed{background:var(--crit)}
   .dot.open{background:var(--wkend-bright)}
-  .countdown{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:10px 0 2px}
+  .countdown{font-size:44px;font-weight:500;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.01em;margin:10px 0 2px}
   .cd-sub{font-size:13px;color:var(--muted)}
   .darkmeta{display:flex;gap:26px;margin-top:18px;flex-wrap:wrap}
-  .darkmeta div b{display:block;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .darkmeta div b{display:block;font-size:17px;font-weight:500;font-family:var(--mono);font-variant-numeric:tabular-nums}
   .darkmeta div span{font-size:12px;color:var(--muted)}
 
-  .coef{font-size:56px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
-  .coef small{font-size:24px;color:var(--ink2);font-weight:600}
-  .coef-class{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid var(--ring);color:var(--ink2);margin-top:8px}
+  .coef{font-size:56px;font-weight:500;line-height:1.05;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .coef small{font-size:24px;color:var(--ink2)}
+  .coef-class{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 11px;border-radius:99px;border:1px solid var(--ring2);color:var(--ink2);margin-top:8px;font-family:var(--mono)}
   .coef-stats{margin-top:16px;border-top:1px solid var(--grid);padding-top:12px;font-size:13px;color:var(--ink2);display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
-  .coef-stats b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
-  .v0note{font-size:11.5px;color:var(--muted);margin-top:12px}
+  .coef-stats b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;font-family:var(--mono)}
+  .v0note{font-size:11.5px;color:var(--dim);margin-top:12px}
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:0 0 16px}
   @media(max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}}
-  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:18px 20px}
-  .tile b{display:block;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  .tile span{font-size:12.5px;color:var(--muted);display:block;margin-top:3px;line-height:1.4}
+  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:18px;padding:20px 22px}
+  .tile b{display:block;font-size:30px;font-weight:500;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--blue)}
+  .tile span{font-size:12.5px;color:var(--muted);display:block;margin-top:4px;line-height:1.45}
 
   .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
   @media(max-width:860px){.charts{grid-template-columns:1fr}}
-  .chart-panel h3{font-size:14px;font-weight:600;margin-bottom:2px}
-  .chart-panel p.sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .chart-panel h3{font-size:15px;font-weight:700;letter-spacing:-0.01em;margin-bottom:2px}
+  .chart-panel p.sub{font-size:12.5px;color:var(--muted);margin-bottom:10px}
   svg{display:block;width:100%;height:auto}
   .full{grid-column:1/-1}
 
@@ -68,36 +98,51 @@
   .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
   table{width:100%;border-collapse:collapse;font-size:13.5px}
-  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--axis)}
-  td{padding:8px 10px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;color:var(--ink2)}
-  td.g{font-weight:600;color:var(--ink)}
-  td:first-child{color:var(--muted)}
-  .kind{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--axis);font-family:var(--mono)}
+  td{padding:8px 10px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;color:var(--ink2);font-family:var(--mono);font-size:12.5px}
+  td.g{font-weight:500;color:var(--ink)}
+  td:first-child{color:var(--dim)}
+  td:last-child{font-family:var(--sans);font-size:13px}
+  .kind{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:var(--sans)}
   .kind i{width:8px;height:8px;border-radius:2px;display:inline-block}
 
-  .method{margin:8px 0 40px}
-  .method h2{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
-  .method p{font-size:14px;color:var(--ink2);max-width:74ch;margin-bottom:10px}
-  .method code{background:var(--surface2);border:1px solid var(--ring);border-radius:5px;padding:2px 7px;font-size:12.5px;color:var(--ink2)}
-  .correction{background:var(--surface);border:1px solid var(--ring);border-left:3px solid var(--wknight);border-radius:8px;padding:16px 18px;max-width:74ch;margin:14px 0}
+  .method{margin:24px 0 48px}
+  .method h2{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-0.02em;margin:30px 0 12px}
+  .method p{font-size:14.5px;color:var(--ink2);max-width:74ch;margin-bottom:10px}
+  .method code{background:var(--surface2);border:1px solid var(--ring);border-radius:6px;padding:2px 7px;font-size:12.5px;color:var(--ink2);font-family:var(--mono)}
+  .correction{background:var(--surface);border:1px solid var(--ring);border-left:3px solid var(--blue);border-radius:12px;padding:16px 18px;max-width:74ch;margin:14px 0}
   .correction b{font-size:13.5px}
   .correction p{font-size:13.5px;margin:4px 0 0}
 
-  footer{border-top:1px solid var(--ring);padding:20px 0 46px;font-size:12.5px;color:var(--muted)}
+  footer{border-top:1px solid var(--ring);padding:24px 0 48px;font-size:12.5px;color:var(--dim)}
   footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  footer a{color:var(--muted)}
 
-  .tip{position:fixed;pointer-events:none;background:var(--surface2);border:1px solid var(--ring);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--ink2);box-shadow:0 6px 20px rgba(0,0,0,.45);opacity:0;transition:opacity .08s;z-index:10;max-width:240px}
-  .tip b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .tip{position:fixed;pointer-events:none;background:var(--surface2);border:1px solid var(--ring2);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--ink2);box-shadow:0 6px 20px rgba(0,0,0,.45);opacity:0;transition:opacity .08s;z-index:60;max-width:240px}
+  .tip b{color:var(--ink);font-variant-numeric:tabular-nums;font-family:var(--mono)}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wrap">
-    <div class="brand">PERPIFY<span>S&amp;P 500 Gap Risk Monitor</span></div>
-    <a href="https://www.perpify.trade">perpify.trade →</a>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="https://perpify.trade"><span class="mark">P</span>PERPIFY</a>
+    <div class="navlinks">
+      <a class="prod" href="https://perpify.trade/score"><svg class="ic-score" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 14l3.5-5.5"/><path d="M5 19a9 9 0 1 1 14 0"/></svg>Trading Score</a>
+      <a class="prod" href="https://perpify.trade/agents"><svg class="ic-agents" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z"/></svg>AI Agents</a>
+      <a class="prod on" href="https://gap.perpify.trade"><svg class="ic-gap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg>Gap Monitor</a>
+    </div>
+    <a class="btn" href="https://demo.perpify.trade">Launch demo</a>
   </div>
-</header>
+</nav>
+
+<div class="intro">
+  <div class="wrap">
+    <span class="eyebrow"><span class="pulse"></span>GAP MONITOR · LIVE · 7,936 REOPENS · 1995–2026</span>
+    <h1>Everyone stops watching at 4. <span class="accent">This doesn't.</span></h1>
+    <p>Markets close. Risk doesn't. This is the live cost of the dark hours — the gap coefficient Perpify's engine applies while the S&amp;P 500 sleeps.</p>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -158,7 +203,7 @@
   </div>
 
   <div class="method">
-    <h2>Methodology</h2>
+    <h2>Check our math.</h2>
     <p><b>Gap</b> = today's official open ÷ previous session's official close − 1: the move that happens entirely while the market is closed and no position can be adjusted. A reopen is classed <b>weekend/holiday</b> when the previous session is ≥3 calendar days back. Dataset: SPY daily OHLC, unadjusted, 1995-01-04 → 2026-07-17 — 7,936 reopens (6,291 weeknight, 1,645 weekend/holiday). SPY's four ex-dividend days per year each add roughly 0.3–0.4% of mechanical down-bias, below the 0.5% stat threshold.</p>
     <p>The <b>gap coefficient</b> shown above is the v0 margin scalar Perpify applies during dark periods: weeknight baseline 1.00σ (σ = 0.65%), weekend/holiday 1.25σ (σ = 0.81%, a 1.55× variance premium) — the σ-basis anchor of a calibration range of 1.2–1.5 that will be conditioned up by realized-vol regime and scheduled events. Weekend fat tails come from event clustering, not duration alone: 65.5 dark hours hold 3.7× the weeknight's dark time but only 1.55× its gap variance — until the years where they hold everything.</p>
     <div class="correction">
@@ -172,8 +217,8 @@
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Perpify — onchain S&amp;P 500 perps that survive the weekend</span>
-    <span>Data through 2026-07-17 · <a href="https://www.perpify.trade">perpify.trade</a> · <a href="https://x.com/aakashneeraj">@aakashneeraj</a></span>
+    <span>© 2026 Perpify — US equity perps that survive the weekend</span>
+    <span>Data through 2026-07-17 · <a href="https://perpify.trade">perpify.trade</a> · <a href="https://demo.perpify.trade">demo</a> · <a href="https://perpify.trade/score">Trading Score</a> · <a href="https://x.com/aakashneeraj">@aakashneeraj</a></span>
   </div>
 </footer>
 
@@ -203,7 +248,7 @@ const D = {
   ],
   stats:{ wk:{sigma:0.65,p05:27.9,p99:2.39,n:6291}, we:{sigma:0.81,p05:30.4,p99:2.98,n:1645} }
 };
-const C = { wk:'#3987e5', we:'#008300', weBright:'#0ca30c', ink:'#ffffff', ink2:'#c3c2b7', muted:'#898781', grid:'#2c2c2a', axis:'#383835' };
+const C = { wk:'#4F8EFF', we:'#26a69a', weBright:'#2fd39f', ink:'#F0EDE8', ink2:'#c6c4ba', muted:'#8a8a82', grid:'#1f1f1e', axis:'#2c2c2a' };
 
 /* ---------- market clock (America/New_York) ---------- */
 const HOLIDAYS = new Set([
@@ -299,7 +344,7 @@ setInterval(tick,1000); tick();
 /* ---------- tiny svg helpers ---------- */
 const NS='http://www.w3.org/2000/svg';
 function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
-function txt(parent,x,y,str,attrs){ const t=el('text',Object.assign({x,y,fill:C.muted,'font-size':'10.5','font-family':'system-ui,sans-serif'},attrs),parent); t.textContent=str; return t; }
+function txt(parent,x,y,str,attrs){ const t=el('text',Object.assign({x,y,fill:C.muted,'font-size':'10.5','font-family':'DM Mono,ui-monospace,monospace'},attrs),parent); t.textContent=str; return t; }
 const tip=document.getElementById('tip');
 function showTip(html,ev){ tip.innerHTML=html; tip.style.opacity=1; const pad=14; let x=ev.clientX+pad,y=ev.clientY+pad; if(x+250>innerWidth)x=ev.clientX-250; if(y+70>innerHeight)y=ev.clientY-80; tip.style.left=x+'px'; tip.style.top=y+'px'; }
 function hideTip(){ tip.style.opacity=0; }
@@ -319,7 +364,7 @@ function hideTip(){ tip.style.opacity=0; }
   function line(xs,ys,color){
     const pts=xs.map((x,i)=>`${X(x)},${Y(ys[i])}`).join(' ');
     el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
-    xs.forEach((x,i)=>{ if([0.5,1,2].includes(x)) el('circle',{cx:X(x),cy:Y(ys[i]),r:3.5,fill:color,stroke:'#1a1a19','stroke-width':2},svg); });
+    xs.forEach((x,i)=>{ if([0.5,1,2].includes(x)) el('circle',{cx:X(x),cy:Y(ys[i]),r:3.5,fill:color,stroke:'#0e0e0e','stroke-width':2},svg); });
   }
   line(D.xs,D.excWe,C.we);
   line(D.xs,D.excWk,C.wk);
